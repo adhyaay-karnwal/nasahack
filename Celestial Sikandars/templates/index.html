@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>Seismic Data Analyzer - Upload</title>
+{% endblock %}
+
+{% block body %}
+<!-- Home Page -->
+<section id="home">
+    <div class="container">
+        <h1>Welcome to the Seismic Data Analyzer</h1>
+        <p>Upload your seismic data (.mseed) to detect real earthquake events.</p>
+        <button onclick="window.location.href='#upload'">Get Started</button>
+    </div>
+</section>
+
+<!-- Upload Page -->
+<section id="upload" style="display:none;">
+    <div class="container">
+        <h2>Upload your Seismic Data File</h2>
+        <form id="uploadForm" method="POST" enctype="multipart/form-data" action="{{ url_for('upload_file') }}">
+            <input type="file" name="file" id="fileInput" accept=".mseed" required>
+            <button type="submit">Upload and Process</button>
+        </form>
+    </div>
+</section>
+
+<!-- Loading Page -->
+<section id="loading" style="display:none;">
+    <div class="container">
+        <h2>Processing Data...</h2>
+        <div class="loader"></div>
+    </div>
+</section>
+
+<!-- Results Page -->
+<section id="results" style="display:none;">
+    <div class="container">
+        <h2>Processed Results</h2>
+        <div id="resultContent">
+            <!-- Dynamically load results (CSV link or graph) -->
+            {% if csv_link %}
+                <a href="{{ csv_link }}" download>Download CSV</a>
+            {% endif %}
+            {% if graph_image %}
+                <img src="{{ url_for('static', filename=graph_image) }}" alt="Graph of Seismic Data">
+            {% endif %}
+        </div>
+        <button onclick="window.location.href='/'">Go Back</button>
+    </div>
+</section>
+
+<script>
+    const uploadForm = document.getElementById('uploadForm');
+    const loadingSection = document.getElementById('loading');
+    const resultSection = document.getElementById('results');
+    const uploadSection = document.getElementById('upload');
+
+    uploadForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        uploadSection.style.display = 'none';
+        loadingSection.style.display = 'block';
+
+        const formData = new FormData(uploadForm);
+        
+        // Use fetch API to send data to the server
+        fetch(uploadForm.action, {
+            method: 'POST',
+            body: formData,
+        }).then(response => response.json())
+        .then(data => {
+            loadingSection.style.display = 'none';
+            resultSection.style.display = 'block';
+            
+            // Dynamically insert the results (this can be tweaked)
+            const resultContent = document.getElementById('resultContent');
+            if (data.csv_link) {
+                resultContent.innerHTML = `<a href="${data.csv_link}" download>Download CSV</a>`;
+            } 
+            if (data.graph_image) {
+                resultContent.innerHTML += `<img src="${data.graph_image}" alt="Graph of Seismic Data">`;
+            }
+        }).catch(error => console.error('Error:', error));
+    });
+</script>
+{% endblock %}
